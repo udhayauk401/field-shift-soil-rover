@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f5f7fb" />
+  <title>FIELD SHIFT ROVER | ESP32 Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div>
+          <p class="eyebrow">FIELD OPERATIONS / ESP32</p>
+          <h1>FIELD SHIFT <span>ROVER</span></h1>
+        </div>
+      </div>
+      <div class="connection-cluster">
+        <div class="connection-status"><span class="pulse-dot"></span><span>Wi-Fi Connected</span></div>
+        <div class="ip-address"><span class="label">ESP32 IP</span><strong id="esp32Ip">10.82.97.252</strong></div>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero-grid">
+        <div class="intro-panel">
+          <div class="intro-copy">
+            <p class="eyebrow green-text">REMOTE MONITORING & SOIL COLLECTION SYSTEM</p>
+            <h2>Field intelligence,<br /><em>collected.</em></h2>
+            <p class="intro-text">A focused command surface for autonomous forward motion, environmental sensing, and soil sample capture.</p>
+          </div>
+          <div class="mission-meta"><span class="meta-icon">◈</span><span>MISSION 04</span><span class="meta-divider"></span><span>TEST FIELD ALPHA</span></div>
+        </div>
+        <div class="telemetry-spotlight">
+          <div class="spotlight-heading"><span>ROVER STATUS</span><span class="live-badge"><span></span> LIVE</span></div>
+          <div class="spotlight-status"><span id="statusLight" class="status-light stopped"></span><strong id="roverStatus">STOPPED</strong></div>
+          <div class="spotlight-line"><span>Forward drive system</span><span id="driveText">Standing by</span></div>
+          <div class="signal-bars" aria-label="Wi-Fi signal strong"><i></i><i></i><i></i><i></i></div>
+        </div>
+      </section>
+
+      <section class="section-block control-section">
+        <div class="section-heading blue-heading"><div><span class="section-kicker">01 / NAVIGATION</span><h2>Rover Control</h2></div><span class="heading-rule"></span></div>
+        <div class="control-layout">
+          <div class="control-card command-card">
+            <div class="card-topline"><span>FORWARD DRIVE</span><span class="command-chip">ONE-WAY MODE</span></div>
+            <div class="command-buttons"><button class="control-button start-button" id="startButton"><span class="button-symbol">▶</span> START</button><button class="control-button stop-button" id="stopButton"><span class="button-symbol">■</span> STOP</button></div>
+            <div class="speed-control"><div class="control-label"><span>TRAVEL SPEED</span><strong id="speedValue">42%</strong></div><input id="speedSlider" type="range" min="0" max="100" value="42" /><div class="range-ends"><span>CRAWL</span><span>MAXIMUM</span></div></div>
+          </div>
+          <div class="control-card readout-card">
+            <div class="card-topline"><span>SYSTEM READOUT</span><span class="readout-time">UPDATED 14:32:08</span></div>
+            <div class="readout-main"><div class="readout-ring"><span id="readoutPercent">0</span><small>%</small></div><div><span class="readout-label">CURRENT VELOCITY</span><strong id="velocityReadout">0.0 <small>m/s</small></strong></div></div>
+            <div class="readout-foot"><span><i class="mini-dot green"></i> Motors <b id="motorReadout">IDLE</b></span><span><i class="mini-dot blue"></i> Route <b>FORWARD ONLY</b></span></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-block sensor-section">
+        <div class="section-heading green-heading"><div><span class="section-kicker">02 / ENVIRONMENT</span><h2>Live Sensor Data</h2></div><span class="heading-rule"></span><span class="timestamp">AUTO-REFRESH 05 SEC</span></div>
+        <div class="sensor-grid">
+          <article class="sensor-card moisture-card"><div class="sensor-card-head"><span class="sensor-icon">🌱</span><span class="sensor-state">NOMINAL</span></div><span class="sensor-name">SOIL MOISTURE</span><div class="sensor-value"><strong id="moistureValue">68</strong><span>%</span></div><div class="meter"><span style="width:68%"></span></div><span class="sensor-foot">Target range 45–80%</span></article>
+          <article class="sensor-card rain-card"><div class="sensor-card-head"><span class="sensor-icon">🌧️</span><span class="sensor-state">CLEAR</span></div><span class="sensor-name">RAIN SENSOR</span><div class="sensor-value"><strong id="rainValue">12</strong><span>%</span></div><div class="meter"><span style="width:12%"></span></div><span class="sensor-foot">Precipitation probability</span></article>
+          <article class="sensor-card temp-card"><div class="sensor-card-head"><span class="sensor-icon">🌡️</span><span class="sensor-state">STABLE</span></div><span class="sensor-name">TEMPERATURE</span><div class="sensor-value"><strong id="tempValue">27.4</strong><span>°C</span></div><div class="sparkline temp-spark"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span class="sensor-foot">+0.3° from last reading</span></article>
+          <article class="sensor-card humidity-card"><div class="sensor-card-head"><span class="sensor-icon">💧</span><span class="sensor-state">NOMINAL</span></div><span class="sensor-name">HUMIDITY</span><div class="sensor-value"><strong id="humidityValue">54</strong><span>% RH</span></div><div class="meter"><span style="width:54%"></span></div><span class="sensor-foot">Atmospheric moisture</span></article>
+          <article class="sensor-card air-card"><div class="sensor-card-head"><span class="sensor-icon">🌫️</span><span class="sensor-state">GOOD</span></div><span class="sensor-name">MQ135 AIR QUALITY</span><div class="sensor-value"><strong id="airValue">186</strong><span>PPM</span></div><div class="meter"><span style="width:31%"></span></div><span class="sensor-foot">Safe threshold &lt; 300 ppm</span></article>
+          <article class="sensor-card distance-card"><div class="sensor-card-head"><span class="sensor-icon">📡</span><span class="sensor-state warning-state" id="distanceState">WATCH</span></div><span class="sensor-name">ULTRASONIC DISTANCE</span><div class="sensor-value"><strong id="distanceValue">34.8</strong><span>cm</span></div><div class="distance-visual"><span></span><span></span><span></span><span></span><span></span><b id="distanceMarker"></b></div><span class="sensor-foot">Safety threshold &gt; 20 cm</span></article>
+        </div>
+      </section>
+
+      <section class="obstacle-row">
+        <div class="obstacle-alert" id="obstacleAlert"><div class="alert-icon">!</div><div><span class="section-kicker">PROXIMITY MONITOR</span><strong id="obstacleText">PATH CLEAR</strong><p id="obstacleDescription">Ultrasonic range is safe for forward movement.</p></div><span class="alert-distance"><b id="obstacleDistance">34.8</b> cm</span></div>
+        <div class="status-pills"><div><span class="pill-icon buzzer-icon">◉</span><span>Buzzer</span><strong id="buzzerStatus">OFF</strong></div><div><span class="pill-icon motor-icon">↗</span><span>Motor</span><strong id="motorStatus">IDLE</strong></div></div>
+      </section>
+
+      <section class="section-block collection-section">
+        <div class="section-heading purple-heading"><div><span class="section-kicker">03 / SAMPLE ACQUISITION</span><h2>Soil Collection</h2></div><span class="heading-rule"></span></div>
+        <div class="collection-layout">
+          <div class="collection-action"><div><span class="collection-icon">✦</span><span class="collection-kicker">AUTOMATED SEQUENCE</span><h3>Ready for a new sample?</h3><p>Pause forward motion and deploy the SG90 collection arm to capture a verified soil reading.</p></div><button class="collection-button" id="collectionButton"><span>CRU SOIL COLLECTOR</span><b>→</b></button></div>
+          <div class="sequence-card"><div class="sequence-header"><span>COLLECTION PROTOCOL</span><strong id="sequenceState">READY</strong></div><ol class="sequence-list"><li class="complete"><span>01</span><div><strong>Rover stops</strong><small>Motion paused for sample capture</small></div><i>✓</i></li><li><span>02</span><div><strong>SG90 servo moves to <em>90°</em></strong><small>Collection arm deployed</small></div><i>○</i></li><li><span>03</span><div><strong>Soil / sensor data is collected</strong><small>Reading packet assembled</small></div><i>○</i></li><li><span>04</span><div><strong>Readings saved to database</strong><small>Local history synchronized</small></div><i>○</i></li><li><span>05</span><div><strong>Servo returns to <em>0°</em></strong><small>Arm secured in home position</small></div><i>○</i></li></ol><div class="servo-readout"><span>Servo Motor</span><strong id="servoStatus">READY (0°)</strong></div></div>
+        </div>
+      </section>
+
+      <section class="section-block database-section">
+        <div class="section-heading database-heading"><div><span class="section-kicker">04 / DATA ARCHIVE</span><h2>Database <span>/ Sensor History</span></h2></div><span class="heading-rule"></span><span class="database-live"><span></span> DATABASE STATUS: CONNECTED</span></div>
+        <div class="summary-grid"><div class="summary-card"><span class="summary-label">TOTAL SAMPLES</span><strong id="sampleCount">1,284</strong><span class="summary-trend">↑ 12 this session</span></div><div class="summary-card latest-card"><span class="summary-label">LATEST SAMPLE</span><strong>68% <small>MOISTURE</small></strong><span class="summary-trend">Captured 2 min ago</span></div><div class="summary-card time-card"><span class="summary-label">LAST COLLECTION</span><strong id="lastCollection">14:30:12</strong><span class="summary-trend">Today, 24 June 2025</span></div></div>
+        <div class="database-toolbar"><label class="search-field"><span>⌕</span><input id="searchInput" type="search" placeholder="Search data..." /></label><label class="date-field"><span>◷</span><select id="dateFilter"><option value="all">All dates</option><option value="today">Today</option><option value="yesterday">Yesterday</option></select></label><button class="toolbar-button download-button" id="downloadButton"><span>↓</span> EXPORT CSV</button><button class="toolbar-button clear-button" id="clearButton">CLEAR HISTORY</button></div>
+        <div class="table-wrap"><table><thead><tr><th>Date & Time</th><th>Soil Moisture</th><th>Rain</th><th>Temperature</th><th>Humidity</th><th>MQ135</th><th>Distance</th><th>Servo Status</th></tr></thead><tbody id="historyBody"><tr><td><strong>24 JUN 2025</strong><small>14:30:12</small></td><td><b class="table-number green-number">68%</b></td><td>12%</td><td>27.4°C</td><td>54%</td><td>186 ppm</td><td><b class="distance-good">34.8 cm</b></td><td><span class="servo-chip">READY · 0°</span></td></tr><tr><td><strong>24 JUN 2025</strong><small>14:25:08</small></td><td><b class="table-number green-number">67%</b></td><td>11%</td><td>27.2°C</td><td>55%</td><td>191 ppm</td><td><b class="distance-good">41.2 cm</b></td><td><span class="servo-chip">READY · 0°</span></td></tr><tr><td><strong>24 JUN 2025</strong><small>14:20:04</small></td><td><b class="table-number green-number">69%</b></td><td>14%</td><td>27.1°C</td><td>55%</td><td>188 ppm</td><td><b class="distance-good">38.6 cm</b></td><td><span class="servo-chip deployed">CAPTURE · 90°</span></td></tr><tr><td><strong>24 JUN 2025</strong><small>14:15:00</small></td><td><b class="table-number green-number">71%</b></td><td>16%</td><td>26.9°C</td><td>57%</td><td>204 ppm</td><td><b class="distance-good">52.1 cm</b></td><td><span class="servo-chip">READY · 0°</span></td></tr><tr><td><strong>24 JUN 2025</strong><small>14:10:18</small></td><td><b class="table-number green-number">72%</b></td><td>15%</td><td>26.8°C</td><td>58%</td><td>210 ppm</td><td><b class="distance-good">48.7 cm</b></td><td><span class="servo-chip">READY · 0°</span></td></tr></tbody></table><div class="empty-state" id="emptyState">No matching sensor records found.</div></div>
+        <div class="table-footer"><span>Showing <b id="visibleCount">5</b> of 1,284 records</span><div class="pagination"><button disabled>←</button><button class="active">1</button><button>2</button><button>3</button><span>...</span><button>→</button></div><span class="sync-label"><i></i> Last sync 14:32:08</span></div>
+      </section>
+    </main>
+    <footer><span>FIELD SHIFT ROVER</span><span>ESP32 TELEMETRY SYSTEM <i></i> BUILD 1.4.0</span></footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
