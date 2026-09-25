@@ -1,0 +1,13 @@
+{
+  "name": "field-shift-rover",
+  "version": "1.0.0",
+  "private": true,
+  "description": "FIELD SHIFT ROVER dashboard API backed by MongoDB",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mongodb": "^6.12.0"
+  }
+}

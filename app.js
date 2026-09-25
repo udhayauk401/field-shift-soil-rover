@@ -39,7 +39,7 @@ const historyBody = document.querySelector('#historyBody');
 const emptyState = document.querySelector('#emptyState');
 const visibleCount = document.querySelector('#visibleCount');
 
-const databaseUrl = 'http://localhost:3000/readings';
+const databaseUrl = 'http://localhost:3001/readings';
 const esp32Url = 'http://10.82.97.252';
 document.querySelector('#esp32Ip').textContent = esp32Url;
 
