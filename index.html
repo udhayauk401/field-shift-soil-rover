@@ -21,7 +21,7 @@
         </div>
       </div>
       <div class="connection-cluster">
-        <div class="connection-status"><span class="pulse-dot"></span><span>Wi-Fi Connected</span></div>
+        <div class="connection-status" id="connectionStatus"><span class="pulse-dot"></span><span id="connectionLabel">Connecting to ESP32...</span></div>
         <div class="ip-address"><span class="label">ESP32 IP</span><strong id="esp32Ip">10.82.97.252</strong></div>
       </div>
     </header>
@@ -48,14 +48,22 @@
         <div class="section-heading blue-heading"><div><span class="section-kicker">01 / NAVIGATION</span><h2>Rover Control</h2></div><span class="heading-rule"></span></div>
         <div class="control-layout">
           <div class="control-card command-card">
-            <div class="card-topline"><span>FORWARD DRIVE</span><span class="command-chip">ONE-WAY MODE</span></div>
-            <div class="command-buttons"><button class="control-button start-button" id="startButton"><span class="button-symbol">▶</span> START</button><button class="control-button stop-button" id="stopButton"><span class="button-symbol">■</span> STOP</button></div>
+            <div class="card-topline"><span>ROVER DRIVE</span><span class="command-chip">DIRECTION CONTROL</span></div>
+            <div class="command-buttons"><button class="control-button start-button" id="startButton"><span class="button-symbol">▶</span> FRONT</button><button class="control-button stop-button" id="backButton"><span class="button-symbol">◀</span> BACK</button><button class="control-button stop-button" id="stopButton"><span class="button-symbol">■</span> STOP</button></div>
             <div class="speed-control"><div class="control-label"><span>TRAVEL SPEED</span><strong id="speedValue">42%</strong></div><input id="speedSlider" type="range" min="0" max="100" value="42" /><div class="range-ends"><span>CRAWL</span><span>MAXIMUM</span></div></div>
+            <div class="servo-control">
+              <div class="servo-control-heading"><span>SERVO CONTROL</span><strong id="servoAngleValue">0°</strong></div>
+              <label class="servo-angle-label" for="servoAngleSlider">Servo Angle</label>
+              <input id="servoAngleSlider" type="range" min="0" max="90" step="1" value="0" />
+              <div class="range-ends"><span>0°</span><span>90°</span></div>
+              <button class="control-button set-servo-angle-button" id="setServoAngleButton" type="button">SET SERVO ANGLE</button>
+              <p class="servo-position-readout" id="currentServoPosition">Current Servo Position: 0°</p>
+            </div>
           </div>
           <div class="control-card readout-card">
             <div class="card-topline"><span>SYSTEM READOUT</span><span class="readout-time">UPDATED 14:32:08</span></div>
             <div class="readout-main"><div class="readout-ring"><span id="readoutPercent">0</span><small>%</small></div><div><span class="readout-label">CURRENT VELOCITY</span><strong id="velocityReadout">0.0 <small>m/s</small></strong></div></div>
-            <div class="readout-foot"><span><i class="mini-dot green"></i> Motors <b id="motorReadout">IDLE</b></span><span><i class="mini-dot blue"></i> Route <b>FORWARD ONLY</b></span></div>
+            <div class="readout-foot"><span><i class="mini-dot green"></i> Motors <b id="motorReadout">IDLE</b></span><span><i class="mini-dot blue"></i> Route <b>FRONT / BACK</b></span></div>
           </div>
         </div>
       </section>
@@ -87,10 +95,57 @@
 
       <section class="section-block database-section">
         <div class="section-heading database-heading"><div><span class="section-kicker">04 / DATA ARCHIVE</span><h2>Database <span>/ Sensor History</span></h2></div><span class="heading-rule"></span><span class="database-live"><span></span> DATABASE STATUS: CONNECTED</span></div>
-        <div class="summary-grid"><div class="summary-card"><span class="summary-label">TOTAL SAMPLES</span><strong id="sampleCount">1,284</strong><span class="summary-trend">↑ 12 this session</span></div><div class="summary-card latest-card"><span class="summary-label">LATEST SAMPLE</span><strong>68% <small>MOISTURE</small></strong><span class="summary-trend">Captured 2 min ago</span></div><div class="summary-card time-card"><span class="summary-label">LAST COLLECTION</span><strong id="lastCollection">14:30:12</strong><span class="summary-trend">Today, 24 June 2025</span></div></div>
+        <div class="summary-grid"><div class="summary-card"><span class="summary-label">TOTAL SAMPLES</span><strong id="sampleCount">1,284</strong><span class="summary-trend">↑ 12 this session</span></div><div class="summary-card latest-card"><span class="summary-label">LATEST SAMPLE</span><strong id="latestSampleValue">68% <small>MOISTURE</small></strong><span class="summary-trend" id="latestSampleTime">Captured 2 min ago</span></div><div class="summary-card time-card"><span class="summary-label">LAST COLLECTION</span><strong id="lastCollection">14:30:12</strong><span class="summary-trend">Today, 24 June 2025</span></div></div>
         <div class="database-toolbar"><label class="search-field"><span>⌕</span><input id="searchInput" type="search" placeholder="Search data..." /></label><label class="date-field"><span>◷</span><select id="dateFilter"><option value="all">All dates</option><option value="today">Today</option><option value="yesterday">Yesterday</option></select></label><button class="toolbar-button download-button" id="downloadButton"><span>↓</span> EXPORT CSV</button><button class="toolbar-button clear-button" id="clearButton">CLEAR HISTORY</button></div>
         <div class="table-wrap"><table><thead><tr><th>Date & Time</th><th>Soil Moisture</th><th>Rain</th><th>Temperature</th><th>Humidity</th><th>MQ135</th><th>Distance</th><th>Servo Status</th></tr></thead><tbody id="historyBody"><tr><td><strong>24 JUN 2025</strong><small>14:30:12</small></td><td><b class="table-number green-number">68%</b></td><td>12%</td><td>27.4°C</td><td>54%</td><td>186 ppm</td><td><b class="distance-good">34.8 cm</b></td><td><span class="servo-chip">READY · 0°</span></td></tr><tr><td><strong>24 JUN 2025</strong><small>14:25:08</small></td><td><b class="table-number green-number">67%</b></td><td>11%</td><td>27.2°C</td><td>55%</td><td>191 ppm</td><td><b class="distance-good">41.2 cm</b></td><td><span class="servo-chip">READY · 0°</span></td></tr><tr><td><strong>24 JUN 2025</strong><small>14:20:04</small></td><td><b class="table-number green-number">69%</b></td><td>14%</td><td>27.1°C</td><td>55%</td><td>188 ppm</td><td><b class="distance-good">38.6 cm</b></td><td><span class="servo-chip deployed">CAPTURE · 90°</span></td></tr><tr><td><strong>24 JUN 2025</strong><small>14:15:00</small></td><td><b class="table-number green-number">71%</b></td><td>16%</td><td>26.9°C</td><td>57%</td><td>204 ppm</td><td><b class="distance-good">52.1 cm</b></td><td><span class="servo-chip">READY · 0°</span></td></tr><tr><td><strong>24 JUN 2025</strong><small>14:10:18</small></td><td><b class="table-number green-number">72%</b></td><td>15%</td><td>26.8°C</td><td>58%</td><td>210 ppm</td><td><b class="distance-good">48.7 cm</b></td><td><span class="servo-chip">READY · 0°</span></td></tr></tbody></table><div class="empty-state" id="emptyState">No matching sensor records found.</div></div>
         <div class="table-footer"><span>Showing <b id="visibleCount">5</b> of 1,284 records</span><div class="pagination"><button disabled>←</button><button class="active">1</button><button>2</button><button>3</button><span>...</span><button>→</button></div><span class="sync-label"><i></i> Last sync 14:32:08</span></div>
+      </section>
+
+      <section class="section-block crop-decision-section">
+        <div class="section-heading green-heading"><div><span class="section-kicker">05 / CROP DECISION SUPPORT</span><h2>Suggested Crops</h2></div><span class="heading-rule"></span></div>
+        <div class="decision-layout">
+          <div class="decision-main">
+            <div class="decision-header-row">
+              <p class="decision-subtitle">Field conditions → crop suitability</p>
+              <button class="toolbar-button download-button" id="updateCropButton"><span>↻</span> UPDATE CROP SUGGESTIONS</button>
+            </div>
+            <div class="decision-overview">
+              <div class="decision-card decision-season-card">
+                <span class="summary-label">CURRENT SEASON</span>
+                <strong id="currentSeason">Current Season: Summer</strong>
+              </div>
+              <div class="decision-card decision-priority-card">
+                <label class="priority-field" for="farmerPriority">
+                  <span>FARMER PRIORITY</span>
+                  <select id="farmerPriority">
+                    <option value="Improve soil health">Improve soil health</option>
+                    <option value="Lower water requirement">Lower water requirement</option>
+                    <option value="Higher yield potential">Higher yield potential</option>
+                    <option value="Crop rotation">Crop rotation</option>
+                    <option value="Maintain soil moisture">Maintain soil moisture</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div class="crop-cards" id="cropSuggestionCards"></div>
+          </div>
+
+          <div class="decision-side">
+            <div class="decision-card detail-card">
+              <span class="summary-label">DECISION SUPPORT</span>
+              <p>Local rover observations can be combined with NASA Earth observations, crop characteristics and farmer priorities to explore crop-rotation strategies.</p>
+              <small>NASA Earth observation integration: Planned</small>
+            </div>
+            <div class="decision-card detail-card">
+              <span class="summary-label">CROP ROTATION CONTEXT</span>
+              <div id="rotationContext">Previous crop data not available</div>
+            </div>
+            <div class="decision-card detail-card">
+              <span class="summary-label">DATA USED</span>
+              <div id="dataUsedSummary">Loading field conditions...</div>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
     <footer><span>FIELD SHIFT ROVER</span><span>ESP32 TELEMETRY SYSTEM <i></i> BUILD 1.4.0</span></footer>

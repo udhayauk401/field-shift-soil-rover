@@ -66,8 +66,11 @@ Servo probeServo;
 int motorSpeed = 100;
 
 bool roverRunning = false;
+bool reverseRunning = false;
 bool obstacleDetected = false;
 bool collectionInProgress = false;
+bool collectionDataReady = false;
+bool servoReady = false;
 
 int soilValue = 0;
 int rainValue = 0;
@@ -81,6 +84,24 @@ long distanceCM = 999;
 // Servo
 const int SERVO_HOME = 0;
 const int SERVO_COLLECT = 90;
+int currentServoAngle = SERVO_HOME;
+
+// =====================================================
+// SERVO ANGLE CONTROL
+// =====================================================
+
+bool setServoAngle(int angle)
+{
+  if (!servoReady)
+  {
+    return false;
+  }
+
+  angle = constrain(angle, SERVO_HOME, SERVO_COLLECT);
+  probeServo.write(angle);
+  currentServoAngle = angle;
+  return true;
+}
 
 // =====================================================
 // MOTOR STOP
@@ -111,6 +132,22 @@ void motorForward()
   // Right side
   digitalWrite(IN3, HIGH);
   digitalWrite(IN4, LOW);
+
+  analogWrite(ENA, motorSpeed);
+  analogWrite(ENB, motorSpeed);
+}
+
+// =====================================================
+// MOTOR REVERSE / BACKWARD
+// =====================================================
+
+void motorReverse()
+{
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
 
   analogWrite(ENA, motorSpeed);
   analogWrite(ENB, motorSpeed);
@@ -170,6 +207,7 @@ void checkObstacle()
   if (distanceCM > 0 && distanceCM < 20)
   {
     obstacleDetected = true;
+    roverRunning = false;
 
     motorStop();
 
@@ -196,8 +234,13 @@ void checkObstacle()
 // SERVO SOIL COLLECTION
 // =====================================================
 
-void servoCollect()
+bool servoCollect()
 {
+  if (!servoReady)
+  {
+    return false;
+  }
+
   collectionInProgress = true;
 
   // Stop rover
@@ -217,11 +260,17 @@ void servoCollect()
   // SERVO 0 -> 90
   // ---------------------------------------------------
 
+  if (!setServoAngle(SERVO_HOME))
+  {
+    collectionInProgress = false;
+    return false;
+  }
+
   for (int angle = SERVO_HOME;
        angle <= SERVO_COLLECT;
        angle++)
   {
-    probeServo.write(angle);
+    setServoAngle(angle);
     delay(15);
   }
 
@@ -276,37 +325,10 @@ void servoCollect()
     lcd.print(temperature);
   }
 
-  // Keep servo at 90
-  probeServo.write(SERVO_COLLECT);
-
-  delay(3000);
-
-  // ---------------------------------------------------
-  // SERVO 90 -> 0
-  // ---------------------------------------------------
-
-  for (int angle = SERVO_COLLECT;
-       angle >= SERVO_HOME;
-       angle--)
-  {
-    probeServo.write(angle);
-    delay(15);
-  }
-
-  Serial.println("Servo = 0");
-  Serial.println("===== SOIL COLLECTION DONE =====");
-
-  lcd.clear();
-
-  lcd.setCursor(0, 0);
-  lcd.print("Collection Done");
-
-  delay(1500);
-
-  lcd.clear();
-  lcd.print("Rover Ready");
-
-  collectionInProgress = false;
+  // Keep servo at 90 until the dashboard confirms the database save.
+  setServoAngle(SERVO_COLLECT);
+  collectionDataReady = true;
+  return true;
 }
 
 // =====================================================
@@ -387,7 +409,11 @@ void handleRoot()
   html += "<h2>Car Control</h2>";
 
   html += "<a href='/start'>";
-  html += "<button>START</button>";
+  html += "<button>FRONT</button>";
+  html += "</a>";
+
+  html += "<a href='/reverse'>";
+  html += "<button>BACK</button>";
   html += "</a>";
 
   html += "<a href='/stop'>";
@@ -410,6 +436,29 @@ void handleRoot()
 
   html += "</form>";
 
+  // =================================================
+  // SERVO CONTROL — UNDER MOTOR CONTROL
+  // =================================================
+
+  html += "<h3>Servo Control</h3>";
+  html += "<p>Servo Angle: ";
+  html += currentServoAngle;
+  html += "°</p>";
+
+  html += "<form action='/servo'>";
+  html += "<input type='range' min='0' max='90' name='angle' value='";
+  html += currentServoAngle;
+  html += "' oninput=\"this.nextElementSibling.value=this.value+'°'\">";
+  html += "<output>";
+  html += currentServoAngle;
+  html += "°</output><br><br>";
+  html += "<input type='submit' value='SET SERVO ANGLE'>";
+  html += "</form>";
+
+  html += "<p>Current Servo: ";
+  html += currentServoAngle;
+  html += "°</p>";
+
   html += "</div>";
 
   // =================================================
@@ -419,8 +468,7 @@ void handleRoot()
   html += "<div class='box'>";
 
   html += "<h2>Soil Collection</h2>";
-
-  html += "<p>Servo: 0° → 90° → 0°</p>";
+  html += "<p>Automatic sequence: 0° → 90° → DATA → 0°</p>";
 
   html += "<a href='/collect'>";
   html += "<button>CRU SOIL COLLECTOR</button>";
@@ -500,7 +548,11 @@ void handleRoot()
   }
   else if (roverRunning)
   {
-    html += "<h3>ROVER RUNNING</h3>";
+    html += "<h3>ROVER MOVING FRONT</h3>";
+  }
+  else if (reverseRunning)
+  {
+    html += "<h3>ROVER MOVING BACK</h3>";
   }
   else
   {
@@ -562,6 +614,9 @@ void handleSensorsAPI()
   json += ",\"roverRunning\":";
   json += roverRunning ? "true" : "false";
 
+  json += ",\"reverseRunning\":";
+  json += reverseRunning ? "true" : "false";
+
   json += ",\"obstacle\":";
   json += obstacleDetected ? "true" : "false";
 
@@ -569,7 +624,7 @@ void handleSensorsAPI()
   json += collectionInProgress ? "true" : "false";
 
   json += ",\"servo\":";
-  json += String(collectionInProgress ? SERVO_COLLECT : SERVO_HOME);
+  json += String(currentServoAngle);
 
   json += "}";
 
@@ -591,6 +646,8 @@ void handleSensorsAPI()
 
 void handleStart()
 {
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+
   if (obstacleDetected)
   {
     server.send(
@@ -613,19 +670,32 @@ void handleStart()
     return;
   }
 
+  reverseRunning = false;
   roverRunning = true;
 
-  server.sendHeader(
-    "Access-Control-Allow-Origin",
-    "*"
-  );
+  Serial.println("FRONT command received");
+  server.send(200, "text/plain", "FRONT");
+}
 
-  server.sendHeader(
-    "Location",
-    "/"
-  );
+// =====================================================
+// REVERSE / BACK
+// =====================================================
 
-  server.send(303);
+void handleReverse()
+{
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+
+  if (collectionInProgress)
+  {
+    server.send(409, "text/plain", "Soil collection in progress");
+    return;
+  }
+
+  roverRunning = false;
+  reverseRunning = true;
+
+  Serial.println("BACK command received");
+  server.send(200, "text/plain", "REVERSE");
 }
 
 // =====================================================
@@ -635,6 +705,7 @@ void handleStart()
 void handleStop()
 {
   roverRunning = false;
+  reverseRunning = false;
 
   motorStop();
 
@@ -648,12 +719,8 @@ void handleStop()
     "*"
   );
 
-  server.sendHeader(
-    "Location",
-    "/"
-  );
-
-  server.send(303);
+  Serial.println("STOP command received");
+  server.send(200, "text/plain", "STOPPED");
 }
 
 // =====================================================
@@ -680,12 +747,108 @@ void handleSpeed()
     "*"
   );
 
-  server.sendHeader(
-    "Location",
-    "/"
-  );
+  server.send(200, "text/plain", "SPEED UPDATED");
+}
 
-  server.send(303);
+// =====================================================
+// SERVO ANGLE CONTROL
+// =====================================================
+
+void handleServoAngle()
+{
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+
+  if (roverRunning || reverseRunning)
+  {
+    server.send(
+      409,
+      "application/json",
+      "{\"success\":false,\"error\":\"Please stop the rover first.\"}"
+    );
+    return;
+  }
+
+  if (collectionInProgress)
+  {
+    server.send(
+      409,
+      "application/json",
+      "{\"success\":false,\"error\":\"Soil collection is in progress.\"}"
+    );
+    return;
+  }
+
+  int angle = currentServoAngle;
+
+  if (server.hasArg("angle"))
+  {
+    angle = server.arg("angle").toInt();
+  }
+
+  angle = constrain(angle, SERVO_HOME, SERVO_COLLECT);
+  if (!setServoAngle(angle))
+  {
+    server.send(503, "application/json", "{\"success\":false,\"error\":\"Servo is not initialized.\"}");
+    return;
+  }
+
+  Serial.print("Manual servo angle: ");
+  Serial.println(currentServoAngle);
+
+  String json = "{\"success\":true,\"servo\":";
+  json += currentServoAngle;
+  json += "}";
+
+  server.send(200, "application/json", json);
+}
+
+// =====================================================
+// SERVO 90 DEGREE BUTTON
+// =====================================================
+
+void handleServo90()
+{
+  server.sendHeader("Access-Control-Allow-Origin", "*");
+
+  if (roverRunning || reverseRunning)
+  {
+    server.send(
+      409,
+      "application/json",
+      "{\"success\":false,\"error\":\"Please stop the rover first.\"}"
+    );
+    return;
+  }
+
+  if (collectionInProgress)
+  {
+    server.send(
+      409,
+      "application/json",
+      "{\"success\":false,\"error\":\"Soil collection is already in progress.\"}"
+    );
+    return;
+  }
+
+  if (!setServoAngle(SERVO_COLLECT))
+  {
+    server.send(503, "application/json", "{\"success\":false,\"error\":\"Servo is not initialized.\"}");
+    return;
+  }
+
+  Serial.println("Servo moved to 90 degrees");
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Servo Position");
+  lcd.setCursor(0, 1);
+  lcd.print("90 Degree");
+
+  server.send(
+    200,
+    "application/json",
+    "{\"success\":true,\"servo\":90}"
+  );
 }
 
 // =====================================================
@@ -699,8 +862,31 @@ void handleCollect()
     "*"
   );
 
+  if (server.hasArg("finish"))
+  {
+    if (!collectionInProgress || !collectionDataReady)
+    {
+      server.send(409, "application/json", "{\"error\":\"No collected reading is waiting to finish.\"}");
+      return;
+    }
+
+    if (!setServoAngle(SERVO_HOME))
+    {
+      server.send(503, "application/json", "{\"error\":\"Servo is not initialized.\"}");
+      return;
+    }
+
+    collectionDataReady = false;
+    collectionInProgress = false;
+    Serial.println("CRU complete; servo returned to 0 degrees");
+    lcd.clear();
+    lcd.print("Collection Done");
+    server.send(200, "application/json", "{\"servo\":0,\"collectionInProgress\":false}");
+    return;
+  }
+
   // Must be stopped
-  if (roverRunning)
+  if (roverRunning || reverseRunning)
   {
     server.send(
       409,
@@ -722,7 +908,19 @@ void handleCollect()
     return;
   }
 
-  servoCollect();
+  if (!servoCollect())
+  {
+    collectionInProgress = false;
+    server.send(503, "application/json", "{\"error\":\"Servo is not initialized.\"}");
+    return;
+  }
+
+  if (server.uri() == "/collect")
+  {
+    setServoAngle(SERVO_HOME);
+    collectionDataReady = false;
+    collectionInProgress = false;
+  }
 
   String json = "{";
   json += "\"time\":\"";
@@ -739,7 +937,11 @@ void handleCollect()
   json += mq135Value;
   json += ",\"distance\":";
   json += distanceCM;
-  json += ",\"servo\":90}";
+  json += ",\"servo\":";
+  json += currentServoAngle;
+  json += ",\"collectionInProgress\":";
+  json += collectionInProgress ? "true" : "false";
+  json += "}";
 
   server.send(
     200,
@@ -799,6 +1001,7 @@ void setup()
   // SERVO
   // =================================================
 
+  ESP32PWM::allocateTimer(3);
   probeServo.setPeriodHertz(50);
 
   probeServo.attach(
@@ -807,9 +1010,16 @@ void setup()
     2400
   );
 
-  probeServo.write(
-    SERVO_HOME
-  );
+  servoReady = probeServo.attached();
+  if (servoReady)
+  {
+    setServoAngle(SERVO_HOME);
+    Serial.println("SG90 initialized on GPIO 13 at 0 degrees");
+  }
+  else
+  {
+    Serial.println("SG90 initialization failed on GPIO 13");
+  }
 
   // =================================================
   // LCD
@@ -937,12 +1147,51 @@ void setup()
   );
 
   server.on(
+    "/start",
+    HTTP_POST,
+    handleStart
+  );
+
+  server.on(
     "/stop",
     handleStop
   );
 
   server.on(
+    "/stop",
+    HTTP_POST,
+    handleStop
+  );
+
+  server.on(
+    "/reverse",
+    handleReverse
+  );
+
+  server.on(
+    "/reverse",
+    HTTP_POST,
+    handleReverse
+  );
+
+  server.on(
+    "/servo90",
+    handleServo90
+  );
+
+  server.on(
+    "/servo",
+    handleServoAngle
+  );
+
+  server.on(
     "/speed",
+    handleSpeed
+  );
+
+  server.on(
+    "/speed",
+    HTTP_POST,
     handleSpeed
   );
 
@@ -953,6 +1202,12 @@ void setup()
 
   server.on(
     "/api/collect",
+    handleCollect
+  );
+
+  server.on(
+    "/api/collect",
+    HTTP_POST,
     handleCollect
   );
 
@@ -1003,6 +1258,11 @@ void loop()
         HIGH
       );
     }
+  }
+  else if (reverseRunning)
+  {
+    motorReverse();
+    digitalWrite(BUZZER_PIN, LOW);
   }
   else
   {

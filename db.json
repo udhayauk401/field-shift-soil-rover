@@ -340,6 +340,17 @@
       "distance": 17,
       "servoStatus": "READY (0°)",
       "id": "_mXT-cEF5wg"
+    },
+    {
+      "time": "2026-09-25T21:29:03.347Z",
+      "soil": 0,
+      "rain": 0,
+      "temperature": 30.2,
+      "humidity": 67.8,
+      "mq135": 176,
+      "distance": 58,
+      "servo": 0,
+      "id": "4EIR6EijpOo"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"
